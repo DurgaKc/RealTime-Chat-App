@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast"
 import { IoMdClose } from "react-icons/io";
 import { TextField, Button, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
@@ -24,7 +25,7 @@ const Login = () => {
   //  Mutation for login
   const mutation = useMutation({
     mutationFn: async (formData) => {
-      return axios.post(`${backendUrl}/login`, formData);
+      return axios.post(`${backendUrl}/api/auth/login`, formData);
     },
     onSuccess: (res) => {
       console.log("Success", res.data);
