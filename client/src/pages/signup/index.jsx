@@ -4,10 +4,13 @@ import { useMutation } from "@tanstack/react-query";
 import { TextField, Button, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { hideLoader, showLoader } from "../../redux/loaderSlice";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const Signup = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -19,17 +22,21 @@ const Signup = () => {
 
   // ✅ API function (FIXED)
   const signupUser = async (data) => {
+    dispatch(showLoader());
+
     return axios.post(`${backendUrl}/api/auth/signup`, data);
   };
 
   const mutation = useMutation({
     mutationFn: signupUser,
     onSuccess: (res) => {
+      dispatch(hideLoader());
       toast.success("Account Created Successfully ✅");
       console.log("Signup success:", res.data);
       navigate("/login"); // OR navigate("/") if you want home
     },
     onError: (error) => {
+      dispatch(hideLoader());
       toast.error(error?.response?.data?.message || "Signup failed ❌");
       console.error("Signup failed:", error);
     },

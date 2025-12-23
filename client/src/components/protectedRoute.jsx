@@ -1,39 +1,45 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLoggedUser } from "../api/user";
+import { useDispatch, useSelector } from "react-redux";
+import { hideLoader, showLoader } from "../redux/loaderSlice";
+import { setUser } from "../redux/userSlice";
 
 const ProtectedRoute = ({ children }) => {
-  const [user, setUser] = useState(null);
-
+  const { user } = useSelector(state => state.userReducer)
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const getloggedInUser = async () => {
     let response = null;
     try {
+      dispatch(showLoader());
       const response = await getLoggedUser();
+      dispatch(hideLoader());
+
       if (response.success) {
-        setUser(response.data);
+        dispatch(setUser(response.data));
       } else {
         navigate("/login");
       }
     } catch (error) {
+       dispatch(hideLoader());
       navigate("/login");
     }
   };
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-     getloggedInUser();
-    }else{
- navigate("/login");
+      getloggedInUser();
+    } else {
+      navigate("/login");
     }
-  }, [navigate]);
+  }, []);
 
-  return( 
-  <>
-  <p>Name: {user?.firstname + ' ' + user?.lastname}</p>
-  {children}
-  </>
+  return (
+    <>
+      {children}
+    </>
   );
 };
 

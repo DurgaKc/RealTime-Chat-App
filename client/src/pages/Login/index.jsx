@@ -5,10 +5,14 @@ import { IoMdClose } from "react-icons/io";
 import { TextField, Button, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
+import { useDispatch } from "react-redux";
+import { hideLoader, showLoader } from "../../redux/loaderSlice";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const Login = () => {
+const dispatch = useDispatch();
+
   const navigate = useNavigate();
 
   const [values, setValues] = useState({
@@ -16,25 +20,28 @@ const Login = () => {
     password: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
-
   const handleChange = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
   };
 
   //  Mutation for login
   const mutation = useMutation({
+  
     mutationFn: async (formData) => {
+      dispatch(showLoader())
       return axios.post(`${backendUrl}/api/auth/login`, formData);
+      
     },
     onSuccess: (res) => {
       console.log("Success", res.data);
+      dispatch(hideLoader());
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       toast.success("Logged in Successfully");
       navigate("/");
     },
     onError: (err) => {
+            dispatch(hideLoader());
       toast.error(err?.response?.data?.message || "Something went wrong!");
     },
   });
