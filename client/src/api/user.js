@@ -29,3 +29,12 @@ export const getLoggedUser = async () => {
     throw error; // propagate error to caller
   }
 };
+export const getAllUsers = async () => {
+  try {
+    const response = await axiosInstance.get("/api/user/get-all-users");
+    return response.data; 
+  } catch (error) {
+    console.error("Error fetching all user:", error);
+    throw error; 
+  }
+};
