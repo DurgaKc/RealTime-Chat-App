@@ -3,7 +3,7 @@ import { TextField } from "@mui/material";
 
 const Search = ({searchKey, setSearchKey}) => {
   return (
-    <div className="flex items-center bg-[#F5F1ED]  px-3 py-1 mt-5 ml-20  rounded-full border border-gray-300 w-full max-w-sm focus-within:border-black transition">
+    <div className="flex items-center bg-[#F5F1ED]  px-3 py-1 mt-5 ml-2  rounded-full border border-gray-300 w-full max-w-sm focus-within:border-black transition">
       
       {/* Search Input */}
       <TextField

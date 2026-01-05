@@ -1,50 +1,73 @@
 import React from "react";
 import { Avatar, Button, Typography } from "@mui/material";
+import { useSelector } from "react-redux";
 
-const UserLists = ({ user }) => {
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-  };
+const UserLists = ({ searchKey = "" }) => {
+  const { allUsers } = useSelector((state) => state.userReducer);
+
+  const getInitials = (firstname, lastname) =>
+    `${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase();
+
+  // 🔹 If nothing typed, show nothing
+  const filteredUsers =
+    searchKey.trim() === ""
+      ? []
+      : allUsers?.filter((user) => {
+          const fname = user?.firstname?.toLowerCase() || "";
+          const lname = user?.lastname?.toLowerCase() || "";
+          const key = searchKey.toLowerCase();
+
+          return fname.includes(key) || lname.includes(key);
+        });
 
   return (
-    <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition border mb-2">
-      
-      {/* Left: Avatar */}
-      <div className="flex items-center gap-4">
-        <Avatar
-          sx={{
-            bgcolor: "#1976d2",
-            width: 45,
-            height: 45,
-            fontSize: "16px",
-            fontWeight: 600,
-          }}
+    <div className="space-y-2">
+      {filteredUsers?.map((user) => (
+        <div
+          key={user.id}
+          className="flex items-center justify-between rounded-md px-3 py-2 shadow-sm hover:shadow transition"
+          style={{ backgroundColor: "#C2A68C" }}
         >
-          {getInitials(user.firstName, user.lastName)}
-        </Avatar>
+          {/* Left */}
+          <div className="flex items-center gap-3">
+            <Avatar
+              sx={{
+                bgcolor: "#957C62",
+                width: 36,
+                height: 36,
+                fontSize: "14px",
+                fontWeight: "bold",
+              }}
+            >
+              {getInitials(user.firstname, user.lastname)}
+            </Avatar>
 
-        {/* Middle: Name & Email */}
-        <div>
-          <Typography variant="subtitle1" fontWeight={600}>
-            {user.firstName} {user.lastName}
-          </Typography>
-          <Typography
-            variant="body2"
-            className="text-gray-500 text-sm"
+            <div className="leading-tight">
+              <Typography fontSize="14px" fontWeight={600} className="text-white">
+                {user.firstname} {user.lastname}
+              </Typography>
+
+              <Typography fontSize="12px" className="text-white/80">
+                {user.email}
+              </Typography>
+            </div>
+          </div>
+
+          <Button
+            size="small"
+            className="!bg-white !text-[#957C62] !text-xs !capitalize hover:!bg-[#EFE9E3]"
           >
-            {user.email}
-          </Typography>
+            Chat
+          </Button>
         </div>
-      </div>
+      ))}
 
-      {/* Right: Start Chat Button */}
-      <Button
-        variant="contained"
-        size="small"
-        className="!bg-blue-600 hover:!bg-blue-700 !capitalize"
-      >
-        Start Chat
-      </Button>
+      {/* Optional empty message */}
+      {searchKey.trim() !== "" && filteredUsers?.length === 0 && (
+        <p className="text-center text-sm text-gray-600">
+          No users found
+        </p>
+      )}
     </div>
   );
 };
