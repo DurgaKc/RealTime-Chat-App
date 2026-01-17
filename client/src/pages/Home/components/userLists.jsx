@@ -3,7 +3,7 @@ import { Avatar, Button, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 
 const UserLists = ({ searchKey = "" }) => {
-  const { allUsers } = useSelector((state) => state.userReducer);
+  const { allUsers, allChats } = useSelector((state) => state.userReducer);
 
   const getInitials = (firstname, lastname) =>
     `${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase();
@@ -43,7 +43,11 @@ const UserLists = ({ searchKey = "" }) => {
             </Avatar>
 
             <div className="leading-tight">
-              <Typography fontSize="14px" fontWeight={600} className="text-white">
+              <Typography
+                fontSize="14px"
+                fontWeight={600}
+                className="text-white"
+              >
                 {user.firstname} {user.lastname}
               </Typography>
 
@@ -52,21 +56,20 @@ const UserLists = ({ searchKey = "" }) => {
               </Typography>
             </div>
           </div>
-
-          <Button
-            size="small"
-            className="!bg-white !text-[#957C62] !text-xs !capitalize hover:!bg-[#EFE9E3]"
-          >
-            Chat
-          </Button>
+          {!allChats.find((chat) => chat.members.includes(user._id)) && (
+            <Button
+              size="small"
+              className="!bg-white !text-[#957C62] !text-xs !capitalize hover:!bg-[#EFE9E3]"
+            >
+              Chat
+            </Button>
+          )}
         </div>
       ))}
 
       {/* Optional empty message */}
       {searchKey.trim() !== "" && filteredUsers?.length === 0 && (
-        <p className="text-center text-sm text-gray-600">
-          No users found
-        </p>
+        <p className="text-center text-sm text-gray-600">No users found</p>
       )}
     </div>
   );
