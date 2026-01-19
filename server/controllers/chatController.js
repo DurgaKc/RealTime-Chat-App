@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const authMiddleware = require("../middlewares/authMiddleware");
-const Chat = require('./../models/chat')
-
+const Chat = require('./../models/chat');
+const mongoose = require('mongoose'); // 👈 ADD THIS
 
 router.post('/create-new-chat', authMiddleware, async (req, res) => {
     try{
@@ -23,9 +23,9 @@ router.post('/create-new-chat', authMiddleware, async (req, res) => {
 
 router.get('/get-all-chats', authMiddleware, async (req, res) => {
     try{
-        const userId = req.userId;        
-        const allChats = await Chat.find({ members: { $in: [userId] } });
-
+        // const userId = req.userId;   
+        const allChats = await Chat.find({members: {$in: req.body.userId}})
+       
 
         res.status(200).send({
             message: 'Chat fetched successfully',
@@ -33,6 +33,7 @@ router.get('/get-all-chats', authMiddleware, async (req, res) => {
             data: allChats
         })
     }catch(error){
+        console.log('ERROR:', error.message);
         res.status(400).send({
             message: error.message,
             success: false
