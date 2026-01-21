@@ -2,132 +2,135 @@ import React from "react";
 import { Avatar, Button, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
-
 import { createNewChat } from "../../../api/user";
 import { showLoader, hideLoader } from "../../../redux/loaderSlice";
-import { setAllChats } from "../../../redux/userSlice";
+import { setAllChats, setSelectedChat } from "../../../redux/userSlice";
 
 const UserLists = ({ searchKey = "" }) => {
   const dispatch = useDispatch();
 
-  const { allUsers, allChats, user: currentUser } = useSelector(
-    (state) => state.userReducer
-  );
+  const {
+    allUsers,
+    allChats,
+    user: currentUser,
+    selectedChat,
+  } = useSelector((state) => state.userReducer);
 
-  // 🔹 Start new chat
-  const startNewChat = async (searchUserId) => {
+  /* ================= START NEW CHAT ================= */
+  const startNewChat = async (userId) => {
     try {
       dispatch(showLoader());
-
-      const response = await createNewChat([
-        currentUser._id,
-        searchUserId,
-      ]);
-
+      const response = await createNewChat([currentUser._id, userId]);
       dispatch(hideLoader());
 
       if (response?.success) {
         toast.success(response.message);
-
-        const newChat = response.data;
-
-        dispatch(setAllChats([...allChats, newChat]));
+        dispatch(setAllChats([...allChats, response.data]));
+        dispatch(setSelectedChat(response.data));
       }
     } catch (error) {
       dispatch(hideLoader());
-      toast.error(
-        error?.response?.data?.message || "Failed to start chat"
-      );
+      toast.error("Failed to start chat");
     }
   };
 
-  const getInitials = (firstname, lastname) =>
-    `${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase();
+  /* ================= OPEN CHAT ================= */
+  const openChat = (userId) => {
+    const chat = allChats.find(
+      (chat) =>
+        chat.members.includes(currentUser._id) &&
+        chat.members.includes(userId)
+    );
 
-  // 🔹 Users who already have chats
-  const chattedUserIds = allChats?.flatMap((chat) => chat.members) || [];
+    if (chat) {
+      dispatch(setSelectedChat(chat));
+    }
+  };
 
-  const chatStartedUsers = allUsers?.filter((user) =>
-    chattedUserIds.includes(user._id)
+  /* ================= HELPERS ================= */
+  const getInitials = (f, l) =>
+    `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
+
+  const chattedUserIds =
+    allChats?.flatMap((chat) =>
+      chat.members.filter((id) => id !== currentUser._id)
+    ) || [];
+
+  const chatStartedUsers = allUsers?.filter((u) =>
+    chattedUserIds.includes(u._id)
   );
 
-  // 🔹 Search users
-  const searchedUsers =
-    searchKey.trim() === ""
-      ? []
-      : allUsers?.filter((user) => {
-          const fname = user?.firstname?.toLowerCase() || "";
-          const lname = user?.lastname?.toLowerCase() || "";
-          const key = searchKey.toLowerCase();
-
-          return fname.includes(key) || lname.includes(key);
-        });
-
-  // 🔹 Final list logic
   const finalUsers =
-    searchKey.trim() === "" ? chatStartedUsers : searchedUsers;
+    searchKey.trim() === ""
+      ? chatStartedUsers
+      : allUsers.filter((u) =>
+          `${u.firstname} ${u.lastname}`
+            .toLowerCase()
+            .includes(searchKey.toLowerCase())
+        );
 
   return (
-    <div className="space-y-2">
-      {finalUsers?.map((user) => {
-        const isChatStarted = allChats?.some((chat) =>
-          chat.members.includes(user._id)
+    <div className="space-y-1">
+      {finalUsers.map((user) => {
+        const chat = allChats.find(
+          (c) =>
+            c.members.includes(currentUser._id) &&
+            c.members.includes(user._id)
         );
+
+        const isActive = selectedChat?._id === chat?._id;
 
         return (
           <div
             key={user._id}
-            className="flex items-center justify-between rounded-md ml-4 mr-2 px-2 py-1 shadow-sm hover:shadow transition"
-            style={{ backgroundColor: "#C2A68C" }}
+            onClick={() => openChat(user._id)}
+            className={`flex items-center justify-between px-3 py-2 mx-2 rounded-lg cursor-pointer transition
+              ${
+                isActive
+                  ? "bg-[#957C62] text-white"
+                  : "bg-[#EFE9E3] hover:bg-[#E1D6CC]"
+              }`}
           >
-            {/* Left */}
-            <div className="flex items-center gap-2">
+            {/* LEFT */}
+            <div className="flex items-center gap-3">
               <Avatar
                 sx={{
-                  bgcolor: "#957C62",
-                  width: 30,
-                  height: 30,
-                  fontSize: "12px",
-                  fontWeight: "bold",
+                  bgcolor: isActive ? "#fff" : "#957C62",
+                  color: isActive ? "#957C62" : "#fff",
+                  width: 36,
+                  height: 36,
+                  fontSize: "13px",
                 }}
               >
                 {getInitials(user.firstname, user.lastname)}
               </Avatar>
 
-              <div className="leading-tight">
-                <Typography
-                  fontSize="13px"
-                  fontWeight={600}
-                  className="text-white"
-                >
+              <div>
+                <Typography fontSize="14px" fontWeight={600}>
                   {user.firstname} {user.lastname}
                 </Typography>
-
-                <Typography fontSize="11px" className="text-white/80">
+                <Typography fontSize="11px" className="opacity-80">
                   {user.email}
                 </Typography>
               </div>
             </div>
 
-            {/* Right */}
-            {!isChatStarted && searchKey.trim() !== "" && (
+            {/* RIGHT */}
+            {!chat && searchKey && (
               <Button
                 size="small"
-                className="!bg-white !text-[#957C62] !text-xs !capitalize hover:!bg-[#EFE9E3]"
-                onClick={() => startNewChat(user._id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startNewChat(user._id);
+                }}
+                className="!bg-white !text-[#957C62] !text-xs"
               >
-                Start Chat
+                Start
               </Button>
             )}
           </div>
         );
       })}
-
-      {searchKey.trim() !== "" && finalUsers?.length === 0 && (
-        <p className="text-center text-sm text-gray-600">
-          No users found
-        </p>
-      )}
     </div>
   );
 };

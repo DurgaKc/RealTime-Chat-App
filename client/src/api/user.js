@@ -55,7 +55,7 @@ export const createNewChat = async ( members ) => {
         const response = await axiosInstance.post("/api/chat/create-new-chat", { members });
         return response.data;
     }catch(error){
-         console.error("Error fetching all chats:", error);
+         console.error("Error in creating new chats:", error);
     throw error; 
     }
 }
