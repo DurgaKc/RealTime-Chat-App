@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Avatar, Button, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
@@ -8,6 +8,10 @@ import { setAllChats, setSelectedChat } from "../../../redux/userSlice";
 
 const UserLists = ({ searchKey = "" }) => {
   const dispatch = useDispatch();
+  const [startingUserId, setStartingUserId] = useState(null);
+
+  // Track users for whom chat creation is in progress
+  const creatingChatsRef = useRef(new Set());
 
   const {
     allUsers,
@@ -16,53 +20,94 @@ const UserLists = ({ searchKey = "" }) => {
     selectedChat,
   } = useSelector((state) => state.userReducer);
 
-  /* ================= START NEW CHAT ================= */
-  const startNewChat = async (userId) => {
+  /* ================= FORMAT TIME ================= */
+  const formatChatTime = (date) => {
+    if (!date) return "";
+
+    const messageDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isToday = messageDate.toDateString() === today.toDateString();
+    const isYesterday =
+      messageDate.toDateString() === yesterday.toDateString();
+
+    if (isToday) {
+      return messageDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    if (isYesterday) {
+      return "Yesterday";
+    }
+
+    return messageDate.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+    });
+  };
+
+  /* ================= START CHAT ONLY IF NOT EXISTS ================= */
+  const startNewChat = async (user) => {
+    if (startingUserId === user._id) return;
+    if (creatingChatsRef.current.has(user._id)) return;
+
+    const existingChat = allChats.find((c) =>
+      c.members.some((m) => m._id === user._id)
+    );
+
+    if (existingChat) {
+      dispatch(setSelectedChat(existingChat));
+      return;
+    }
+
     try {
+      creatingChatsRef.current.add(user._id);
+      setStartingUserId(user._id);
       dispatch(showLoader());
-      const response = await createNewChat([currentUser._id, userId]);
-      dispatch(hideLoader());
+
+      const response = await createNewChat([currentUser._id, user._id]);
 
       if (response?.success) {
-        toast.success(response.message);
-        dispatch(setAllChats([...allChats, response.data]));
-        dispatch(setSelectedChat(response.data));
+        const chat = response.data;
+
+        const exists = allChats.some((c) => c._id === chat._id);
+        if (!exists) {
+          dispatch(setAllChats([chat, ...allChats]));
+        }
+
+        dispatch(setSelectedChat(chat));
       }
     } catch (error) {
-      dispatch(hideLoader());
       toast.error("Failed to start chat");
+    } finally {
+      creatingChatsRef.current.delete(user._id);
+      setStartingUserId(null);
+      dispatch(hideLoader());
     }
   };
 
-  /* ================= OPEN CHAT ================= */
-  const openChat = (userId) => {
-    const chat = allChats.find(
-      (chat) =>
-        chat.members.includes(currentUser._id) &&
-        chat.members.includes(userId)
-    );
-
-    if (chat) {
-      dispatch(setSelectedChat(chat));
-    }
+  /* ================= OPEN EXISTING CHAT ================= */
+  const openChat = (chat) => {
+    dispatch(setSelectedChat(chat));
   };
 
   /* ================= HELPERS ================= */
   const getInitials = (f, l) =>
     `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
-  const chattedUserIds =
-    allChats?.flatMap((chat) =>
-      chat.members.filter((id) => id !== currentUser._id)
-    ) || [];
+  /* ================= FILTER LOGIC ================= */
 
-  const chatStartedUsers = allUsers?.filter((u) =>
-    chattedUserIds.includes(u._id)
+  const chatUsers = allChats.map((chat) =>
+    chat.members.find((m) => m._id !== currentUser._id)
   );
 
   const finalUsers =
     searchKey.trim() === ""
-      ? chatStartedUsers
+      ? chatUsers
       : allUsers.filter((u) =>
           `${u.firstname} ${u.lastname}`
             .toLowerCase()
@@ -72,18 +117,19 @@ const UserLists = ({ searchKey = "" }) => {
   return (
     <div className="space-y-1">
       {finalUsers.map((user) => {
-        const chat = allChats.find(
-          (c) =>
-            c.members.includes(currentUser._id) &&
-            c.members.includes(user._id)
+        const chat = allChats.find((c) =>
+          c.members.some((m) => m._id === user._id)
         );
 
         const isActive = selectedChat?._id === chat?._id;
+        const isStarting =
+          startingUserId === user._id ||
+          creatingChatsRef.current.has(user._id);
 
         return (
           <div
             key={user._id}
-            onClick={() => openChat(user._id)}
+            onClick={() => chat && openChat(chat)}
             className={`flex items-center justify-between px-3 py-2 mx-2 rounded-lg cursor-pointer transition
               ${
                 isActive
@@ -92,7 +138,7 @@ const UserLists = ({ searchKey = "" }) => {
               }`}
           >
             {/* LEFT */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 overflow-hidden">
               <Avatar
                 sx={{
                   bgcolor: isActive ? "#fff" : "#957C62",
@@ -105,29 +151,51 @@ const UserLists = ({ searchKey = "" }) => {
                 {getInitials(user.firstname, user.lastname)}
               </Avatar>
 
-              <div>
-                <Typography fontSize="14px" fontWeight={600}>
+              <div className="flex flex-col overflow-hidden">
+                <Typography fontSize="14px" fontWeight={600} noWrap>
                   {user.firstname} {user.lastname}
                 </Typography>
-                <Typography fontSize="11px" className="opacity-80">
-                  {user.email}
-                </Typography>
+
+                {chat?.lastMessage && (
+                  <Typography
+                    fontSize="11px"
+                    className="opacity-80 truncate max-w-[180px]"
+                  >
+                    {chat.lastMessage.sender === currentUser._id
+                      ? `You: ${chat.lastMessage.text}`
+                      : `${user.firstname}: ${chat.lastMessage.text}`}
+                  </Typography>
+                )}
               </div>
             </div>
 
             {/* RIGHT */}
-            {!chat && searchKey && (
-              <Button
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startNewChat(user._id);
-                }}
-                className="!bg-white !text-[#957C62] !text-xs"
-              >
-                Start
-              </Button>
-            )}
+            <div className="flex flex-col items-end gap-1 min-w-[60px]">
+              {chat?.lastMessage && (
+                <Typography
+                  fontSize="11px"
+                  className={`${
+                    isActive ? "text-white/80" : "text-gray-500"
+                  }`}
+                >
+                  {formatChatTime(chat.lastMessage.createdAt)}
+                </Typography>
+              )}
+
+              {!chat && searchKey && (
+                <Button
+                  size="small"
+                  disabled={isStarting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startNewChat(user);
+                  }}
+                  className="!bg-white !text-[#957C62] !text-xs disabled:!opacity-50 disabled:!cursor-not-allowed"
+                >
+                  {isStarting ? "Starting..." : "Start"}
+                </Button>
+              )}
+            </div>
           </div>
         );
       })}
