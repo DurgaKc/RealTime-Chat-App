@@ -50,6 +50,24 @@ const UserLists = ({ searchKey = "" }) => {
     });
   };
 
+  /* ================= UNREAD MESSAGE COUNT ================= */
+const getUnreadMessageCount = (userId) => {
+  const chat = allChats.find((c) =>
+    c.members.some((m) => m._id === userId)
+  );
+
+  if (
+    chat &&
+    chat.unreadMessageCount > 0 &&
+    chat.lastMessage?.sender !== currentUser._id
+  ) {
+    return chat.unreadMessageCount;
+  }
+
+  return 0;
+};
+
+
   /* ================= START CHAT ONLY IF NOT EXISTS ================= */
   const startNewChat = async (user) => {
     if (startingUserId === user._id) return;
@@ -95,15 +113,19 @@ const UserLists = ({ searchKey = "" }) => {
     dispatch(setSelectedChat(chat));
   };
 
-  /* ================= HELPERS ================= */
   const getInitials = (f, l) =>
     `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
-  /* ================= FILTER LOGIC ================= */
-
-  const chatUsers = allChats.map((chat) =>
+  const chatUsers = [...allChats]
+  .sort(
+    (a, b) =>
+      new Date(b?.lastMessage?.createdAt || 0) -
+      new Date(a?.lastMessage?.createdAt || 0)
+  )
+  .map((chat) =>
     chat.members.find((m) => m._id !== currentUser._id)
   );
+
 
   const finalUsers =
     searchKey.trim() === ""
@@ -163,7 +185,7 @@ const UserLists = ({ searchKey = "" }) => {
                   >
                     {chat.lastMessage.sender === currentUser._id
                       ? `You: ${chat.lastMessage.text}`
-                      : `${user.firstname}: ${chat.lastMessage.text}`}
+                      : chat.lastMessage.text}
                   </Typography>
                 )}
               </div>
@@ -180,6 +202,12 @@ const UserLists = ({ searchKey = "" }) => {
                 >
                   {formatChatTime(chat.lastMessage.createdAt)}
                 </Typography>
+              )}
+
+              {getUnreadMessageCount(user._id) > 0 && (
+                <div className="bg-green-600 text-white text-[11px] font-semibold min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full">
+                  {getUnreadMessageCount(user._id)}
+                </div>
               )}
 
               {!chat && searchKey && (

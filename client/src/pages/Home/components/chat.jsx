@@ -1,6 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Avatar } from "@mui/material";
-import { createNewMessage, getAllMessages, clearUnreadMessageCount } from "../../../api/user";
+import {
+  createNewMessage,
+  getAllMessages,
+  clearUnreadMessageCount,
+} from "../../../api/user";
 import { hideLoader, showLoader } from "../../../redux/loaderSlice";
 import { setAllChats } from "../../../redux/userSlice";
 import toast from "react-hot-toast";
@@ -14,6 +18,10 @@ const ChatArea = () => {
 
   const { selectedChat, user, allChats } = useSelector(
     (state) => state.userReducer
+  );
+
+  const otherUser = selectedChat?.members?.find(
+    (m) => m._id !== user._id
   );
 
   /* ================= FETCH MESSAGES ================= */
@@ -34,9 +42,15 @@ const ChatArea = () => {
     }
   };
 
-  /* ================= CLEAR UNREAD ================= */
+  /* ================= CLEAR UNREAD (ONLY RECEIVER) ================= */
   const clearUnreadMessages = async () => {
     if (!selectedChat?._id) return;
+
+    // 🔥 IMPORTANT FIX:
+    // Only clear unread if CURRENT USER is RECEIVER
+    const lastMsg = selectedChat?.lastMessage;
+
+    if (lastMsg?.sender === user._id) return;
 
     try {
       const response = await clearUnreadMessageCount(selectedChat._id);
@@ -80,6 +94,7 @@ const ChatArea = () => {
       ...payload,
       _id: tempId,
       createdAt: new Date().toISOString(),
+      read: false, // 👈 Important
     };
 
     setAllMessages((prev) => [...prev, tempMsg]);
@@ -108,10 +123,6 @@ const ChatArea = () => {
       </div>
     );
   }
-
-  const otherUser = selectedChat.members?.find(
-    (m) => m._id !== user._id
-  );
 
   /* ================= FORMAT DATE ================= */
   const formatTime = (date) => {
@@ -149,7 +160,8 @@ const ChatArea = () => {
 
         <div>
           <p className="font-semibold text-lg">
-            {otherUser?.firstname || "Unknown"} {otherUser?.lastname || "User"}
+            {otherUser?.firstname || "Unknown"}{" "}
+            {otherUser?.lastname || "User"}
           </p>
           <p className="text-xs opacity-80">Online</p>
         </div>
@@ -174,8 +186,13 @@ const ChatArea = () => {
               {msg.text}
             </div>
 
-            <div className="text-[11px] text-gray-500 mt-1 px-1">
+            {/* TIME + SEEN (ONLY FOR SENDER SIDE) */}
+            <div className="text-[11px] text-gray-500 mt-1 px-1 flex items-center gap-1">
               {formatTime(msg.createdAt)}
+
+              {msg.sender === user._id && msg.read && (
+                <span className="text-[12px]">seen</span>
+              )}
             </div>
           </div>
         ))}
