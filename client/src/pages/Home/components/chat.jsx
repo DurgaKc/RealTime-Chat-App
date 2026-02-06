@@ -9,20 +9,19 @@ import { hideLoader, showLoader } from "../../../redux/loaderSlice";
 import { setAllChats } from "../../../redux/userSlice";
 import toast from "react-hot-toast";
 import { useEffect, useRef, useState } from "react";
+import  store  from './../../../redux/store'
 
-const ChatArea = () => {
+const ChatArea = ({ socket }) => {
   const dispatch = useDispatch();
   const [message, setMessage] = useState("");
   const [allMessages, setAllMessages] = useState([]);
   const scrollRef = useRef(null);
 
   const { selectedChat, user, allChats } = useSelector(
-    (state) => state.userReducer
+    (state) => state.userReducer,
   );
 
-  const otherUser = selectedChat?.members?.find(
-    (m) => m._id !== user._id
-  );
+  const otherUser = selectedChat?.members?.find((m) => m._id !== user._id);
 
   /* ================= FETCH MESSAGES ================= */
   const getMessages = async () => {
@@ -57,7 +56,7 @@ const ChatArea = () => {
 
       if (response?.success) {
         const updatedChats = allChats.map((chat) =>
-          chat._id === selectedChat._id ? response.data : chat
+          chat._id === selectedChat._id ? response.data : chat,
         );
         dispatch(setAllChats(updatedChats));
       }
@@ -71,6 +70,12 @@ const ChatArea = () => {
     setAllMessages([]);
     getMessages();
     clearUnreadMessages();
+    socket.off("receive-message").on("receive-message", (data) => {
+      const selectedChat = store.getState.userReducer.selectedChat;
+      if (selectedChat._id === data.chatId) {
+        setAllMessages((prevmsg) => [...prevmsg, data]);
+      }
+    });
   }, [selectedChat?._id]);
 
   /* ================= AUTO SCROLL ================= */
@@ -87,6 +92,12 @@ const ChatArea = () => {
       sender: user._id,
       text: message.trim(),
     };
+    socket.emit("send-message", {
+      ...payload,
+      members: selectedChat.members.map((m) => m._id),
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
 
     const tempId = Date.now();
 
@@ -101,17 +112,17 @@ const ChatArea = () => {
     setMessage("");
 
     try {
-      dispatch(showLoader());
+      // dispatch(showLoader());
       const response = await createNewMessage(payload);
-      dispatch(hideLoader());
+      // dispatch(hideLoader());
 
       if (response?.success) {
         setAllMessages((prev) =>
-          prev.map((m) => (m._id === tempId ? response.data : m))
+          prev.map((m) => (m._id === tempId ? response.data : m)),
         );
       }
     } catch (error) {
-      dispatch(hideLoader());
+      // dispatch(hideLoader());
       toast.error(error?.message || "Failed to send message");
     }
   };
@@ -132,8 +143,7 @@ const ChatArea = () => {
     yesterday.setDate(today.getDate() - 1);
 
     const isToday = messageDate.toDateString() === today.toDateString();
-    const isYesterday =
-      messageDate.toDateString() === yesterday.toDateString();
+    const isYesterday = messageDate.toDateString() === yesterday.toDateString();
 
     const time = messageDate.toLocaleTimeString([], {
       hour: "2-digit",
@@ -160,8 +170,7 @@ const ChatArea = () => {
 
         <div>
           <p className="font-semibold text-lg">
-            {otherUser?.firstname || "Unknown"}{" "}
-            {otherUser?.lastname || "User"}
+            {otherUser?.firstname || "Unknown"} {otherUser?.lastname || "User"}
           </p>
           <p className="text-xs opacity-80">Online</p>
         </div>

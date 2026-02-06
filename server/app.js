@@ -25,7 +25,14 @@ app.use("/api/message", messageRouter);
 io.on("connection", (socket) => {
  socket.on('join-room', userid => {
      socket.join(userid);
-     console.log("User joined: " + userid);
+    
+ })
+ socket.on('send-message', (message)=> {
+  console.log(message);
+   io
+   .to(message.members[0])
+   .to(message.members[1])
+   .emit('receive-message', message)
  })
 })
 
