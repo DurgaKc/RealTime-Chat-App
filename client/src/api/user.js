@@ -40,6 +40,30 @@ export const getAllUsers = async () => {
   }
   
 };
+// export const uploadProfilePic = async (image) => {
+//   try {
+//     const response = await axiosInstance.post("/api/user/upload-profile-pic", { image });
+//     return response.data; 
+    
+//   } catch (error) {
+//     console.error("Error fetching all user:", error);
+//     throw error; 
+//   }
+  
+// };
+export const uploadProfilePic = async (image) => {
+  try {
+    const response = await axiosInstance.post("/api/user/upload-profile-pic", { image });
+    return response.data; 
+  } catch (error) {
+    console.error("Error uploading profile picture:", error);
+    // Return error response instead of throwing
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error uploading profile picture"
+    };
+  }
+};
 
 export const getAllChats = async () => {
     try{

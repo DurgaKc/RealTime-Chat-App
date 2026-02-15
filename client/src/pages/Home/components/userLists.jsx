@@ -9,6 +9,7 @@ import { setAllChats, setSelectedChat } from "../../../redux/userSlice";
 const UserLists = ({ searchKey = "" }) => {
   const dispatch = useDispatch();
   const [startingUserId, setStartingUserId] = useState(null);
+  const [imageErrors, setImageErrors] = useState({}); // NEW: Track image load errors per user
 
   // Track users for whom chat creation is in progress
   const creatingChatsRef = useRef(new Set());
@@ -51,22 +52,21 @@ const UserLists = ({ searchKey = "" }) => {
   };
 
   /* ================= UNREAD MESSAGE COUNT ================= */
-const getUnreadMessageCount = (userId) => {
-  const chat = allChats.find((c) =>
-    c.members.some((m) => m._id === userId)
-  );
+  const getUnreadMessageCount = (userId) => {
+    const chat = allChats.find((c) =>
+      c.members.some((m) => m._id === userId)
+    );
 
-  if (
-    chat &&
-    chat.unreadMessageCount > 0 &&
-    chat.lastMessage?.sender !== currentUser._id
-  ) {
-    return chat.unreadMessageCount;
-  }
+    if (
+      chat &&
+      chat.unreadMessageCount > 0 &&
+      chat.lastMessage?.sender !== currentUser._id
+    ) {
+      return chat.unreadMessageCount;
+    }
 
-  return 0;
-};
-
+    return 0;
+  };
 
   /* ================= START CHAT ONLY IF NOT EXISTS ================= */
   const startNewChat = async (user) => {
@@ -113,19 +113,33 @@ const getUnreadMessageCount = (userId) => {
     dispatch(setSelectedChat(chat));
   };
 
-  const getInitials = (f, l) =>
-    `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
+  // NEW: Handle image load error
+  const handleImageError = (userId) => {
+    setImageErrors(prev => ({ ...prev, [userId]: true }));
+  };
+
+  // MODIFIED: Get initials with fallback
+  const getInitials = (user) => {
+    if (!user) return "";
+    const first = user.firstname?.[0] || "";
+    const last = user.lastname?.[0] || "";
+    return (first + last).toUpperCase() || "U";
+  };
+
+  // NEW: Get user display name
+  const getUserDisplayName = (user) => {
+    return `${user.firstname || ""} ${user.lastname || ""}`.trim() || "Unknown User";
+  };
 
   const chatUsers = [...allChats]
-  .sort(
-    (a, b) =>
-      new Date(b?.lastMessage?.createdAt || 0) -
-      new Date(a?.lastMessage?.createdAt || 0)
-  )
-  .map((chat) =>
-    chat.members.find((m) => m._id !== currentUser._id)
-  );
-
+    .sort(
+      (a, b) =>
+        new Date(b?.lastMessage?.createdAt || 0) -
+        new Date(a?.lastMessage?.createdAt || 0)
+    )
+    .map((chat) =>
+      chat.members.find((m) => m._id !== currentUser._id)
+    );
 
   const finalUsers =
     searchKey.trim() === ""
@@ -147,6 +161,9 @@ const getUnreadMessageCount = (userId) => {
         const isStarting =
           startingUserId === user._id ||
           creatingChatsRef.current.has(user._id);
+        
+        // NEW: Check if we should show profile pic or avatar
+        const showProfilePic = user?.profilePic && !imageErrors[user._id];
 
         return (
           <div
@@ -159,23 +176,36 @@ const getUnreadMessageCount = (userId) => {
                   : "bg-[#EFE9E3] hover:bg-[#E1D6CC]"
               }`}
           >
-            {/* LEFT */}
+            {/* LEFT - UPDATED WITH PROFILE PIC */}
             <div className="flex items-center gap-3 overflow-hidden">
-              <Avatar
-                sx={{
-                  bgcolor: isActive ? "#fff" : "#957C62",
-                  color: isActive ? "#957C62" : "#fff",
-                  width: 36,
-                  height: 36,
-                  fontSize: "13px",
-                }}
-              >
-                {getInitials(user.firstname, user.lastname)}
-              </Avatar>
+              {/* CHANGED: Dynamic profile picture or avatar */}
+              {showProfilePic ? (
+                <img
+                  src={user.profilePic}
+                  alt={getUserDisplayName(user)}
+                  className="w-9 h-9 rounded-full object-cover border-2"
+                  style={{ 
+                    borderColor: isActive ? "#fff" : "#C2A68C" 
+                  }}
+                  onError={() => handleImageError(user._id)}
+                />
+              ) : (
+                <Avatar
+                  sx={{
+                    bgcolor: isActive ? "#fff" : "#957C62",
+                    color: isActive ? "#957C62" : "#fff",
+                    width: 36,
+                    height: 36,
+                    fontSize: "13px",
+                  }}
+                >
+                  {getInitials(user)}
+                </Avatar>
+              )}
 
               <div className="flex flex-col overflow-hidden">
                 <Typography fontSize="14px" fontWeight={600} noWrap>
-                  {user.firstname} {user.lastname}
+                  {getUserDisplayName(user)}
                 </Typography>
 
                 {chat?.lastMessage && (
@@ -191,7 +221,7 @@ const getUnreadMessageCount = (userId) => {
               </div>
             </div>
 
-            {/* RIGHT */}
+            {/* RIGHT - UNCHANGED */}
             <div className="flex flex-col items-end gap-1 min-w-[60px]">
               {chat?.lastMessage && (
                 <Typography

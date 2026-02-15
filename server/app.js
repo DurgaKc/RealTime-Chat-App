@@ -8,7 +8,9 @@ const messageRouter = require("./controllers/messageController");
 
 // use auth controller routers
 app.use(cors());
-app.use(express.json());
+app.use(express.json(
+ { limit: "50mb"}
+));
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
@@ -23,17 +25,29 @@ app.use("/api/message", messageRouter);
 
 // test socket connection from client
 io.on("connection", (socket) => {
- socket.on('join-room', userid => {
-     socket.join(userid);
-    
- })
- socket.on('send-message', (message)=> {
-  console.log(message);
-   io
-   .to(message.members[0])
-   .to(message.members[1])
-   .emit('receive-message', message)
- })
-})
+
+  socket.on("join-room", (userid) => {
+    socket.join(userid);
+    console.log("User joined:", userid);
+  });
+
+  socket.on("send-message", (message) => {
+    message.members.forEach((member) => {
+      if (member !== message.sender) {
+        io.to(member).emit("receive-message", message);
+      }
+    });
+  });
+
+  socket.on("user-typing", (data) => {
+    data.members.forEach((member) => {
+      if (member !== data.sender) {
+        io.to(member).emit("started-typing", data);
+      }
+    });
+  });
+
+});
+
 
 module.exports = server;

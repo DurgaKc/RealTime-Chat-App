@@ -23,14 +23,35 @@ const Home = () => {
   }, [user]);
 
   return (
-    <div>
-      <Header />
+    <div className="h-screen flex flex-col">
+  <Header />
 
-      <div style={{ display: "flex", height: "calc(100vh - 64px)" }}>
-        <Sidebar />
-        {selectedChat && <ChatArea socket={socket}></ChatArea>}
-      </div>
-    </div>
+  <div className="flex flex-1 h-screen">
+  {/* SIDEBAR */}
+  <div
+    className={`
+      fixed inset-0 z-20 bg-white md:static md:block 
+      ${selectedChat ? "translate-x-[100%] md:translate-x-0" : "translate-x-0"}
+      w-full md:w-[550px] transition-transform duration-300 ease-in-out
+      overflow-y-auto
+    `}
+  >
+    <Sidebar />
+  </div>
+
+  {/* CHAT AREA */}
+  <div
+    className={`
+      flex-1 ml-0 md:mx-[50px] h-full 
+      ${selectedChat ? "block" : "hidden md:block"}
+    `}
+  >
+    {selectedChat && <ChatArea socket={socket} />}
+  </div>
+</div>
+
+</div>
+
   );
 };
 
