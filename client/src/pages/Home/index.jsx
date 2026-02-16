@@ -4,6 +4,7 @@ import Sidebar from "./components/sidebar";
 import ChatArea from "./components/chat";
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
+import Footer from "../../components/Footer";
 
 const socket = io("http://localhost:5000");
 
@@ -48,8 +49,9 @@ const Home = () => {
   >
     {selectedChat && <ChatArea socket={socket} />}
   </div>
-</div>
 
+</div>
+  <Footer/>
 </div>
 
   );

@@ -8,6 +8,7 @@ import Loader from "./components/loader.jsx";
 import { Toaster } from "react-hot-toast";
 import { useSelector } from "react-redux";
 import Profile from "./pages/profile/index.jsx";
+import PasswordChange from "./pages/Home/components/setting/PasswordChange.jsx";
 
 function App() {
   const {loader} = useSelector((state) => state.loaderReducer);
@@ -31,6 +32,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          ></Route>
+          <Route
+            path="/changePassword"
+            element={
+              <ProtectedRoute>
+                <PasswordChange />
               </ProtectedRoute>
             }
           ></Route>

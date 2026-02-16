@@ -304,7 +304,7 @@ const ChatArea = ({ socket }) => {
       </div>
 
       {/* INPUT */}
-      <div className="flex items-center gap-3 p-3 bg-white border-t">
+      <div className="flex items-center gap-3 p-3 mb-4 bg-white border-t">
         <input
           type="text"
           placeholder="Type a message..."

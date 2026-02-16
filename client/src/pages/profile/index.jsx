@@ -6,6 +6,7 @@ import { hideLoader, showLoader } from "../../redux/loaderSlice";
 import toast from "react-hot-toast";
 import { setUser } from "../../redux/userSlice";
 import ChatHeader from "../Home/components/header";
+import Footer from "../../components/Footer";
 
 const Profile = () => {
   const { user } = useSelector((state) => state.userReducer);
@@ -154,6 +155,7 @@ const Profile = () => {
         </div>
       </div>
     </div>
+    <Footer/>
     </>
   );
 };

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { IoMdSettings } from "react-icons/io";
 import { Menu, MenuItem, Divider, Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SettingsDropdown() {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
+  const location = useLocation(); // get current path
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -19,8 +19,16 @@ export default function SettingsDropdown() {
 
   const handleProfile = () => {
     handleClose();
-    navigate("/profile");
-    toast.success("Navigating to Profile");
+    if (location.pathname !== "/profile") {
+      navigate("/profile");
+    }
+  };
+
+  const handlePasswordChange = () => {
+    handleClose();
+    if (location.pathname !== "/password") {
+      navigate("/changePassword");
+    }
   };
 
   const handleLogout = () => {
@@ -28,19 +36,7 @@ export default function SettingsDropdown() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
-    toast.success("Logged out successfully");
   };
-
-
-  try {
-    const userData = localStorage.getItem("user");
-    if (userData && userData !== "undefined") {
-      const user = JSON.parse(userData);
-      userEmail = user?.email || "User";
-    }
-  } catch (error) {
-    console.log("Error parsing user data:", error);
-  }
 
   return (
     <Box>
@@ -55,8 +51,8 @@ export default function SettingsDropdown() {
           height: "40px",
           borderRadius: "50%",
           "&:hover": {
-            backgroundColor: "rgba(0, 0, 0, 0.04)"
-          }
+            backgroundColor: "rgba(0, 0, 0, 0.04)",
+          },
         }}
       >
         <IoMdSettings size={24} color="#8B4513" />
@@ -67,26 +63,19 @@ export default function SettingsDropdown() {
         open={open}
         onClose={handleClose}
         anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
+          vertical: "bottom",
+          horizontal: "right",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
+          vertical: "top",
+          horizontal: "right",
         }}
       >
-       
-        <MenuItem onClick={handleProfile}>
-          Profile
-        </MenuItem>
-         <Divider />
-        <MenuItem onClick={handleProfile}>
-          Change Password
-        </MenuItem>
-        
+        <MenuItem onClick={handleProfile}>Profile</MenuItem>
         <Divider />
-        
-        <MenuItem onClick={handleLogout} sx={{ color: '#d32f2f' }}>
+        <MenuItem onClick={handlePasswordChange}>Change Password</MenuItem>
+        <Divider />
+        <MenuItem onClick={handleLogout} sx={{ color: "#d32f2f" }}>
           Logout
         </MenuItem>
       </Menu>

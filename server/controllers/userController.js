@@ -39,35 +39,6 @@ router.get("/get-all-users", authMiddleware, async (req, res) => {
   }
 });
 
-// router.post('/upload-profile-pic', authMiddleware, async (req, res) =>{
-//   try{
-//      const image = req.body.image;
-
-//      // upload image to cloudinary
-//      const uploadedImage = await cloudinary.uploader.upload(image,{
-//         folder: 'quick-chat'
-//      });
-
-//      // update user profilePic
-//      const user = await User.findByIdAndUpdate(
-//       req.body.userId,
-//       { profilePic: uploadedImage.secure_url },
-//       { new: true }
-//      );
-
-//      res.send({
-//       message: 'Profile picture uploaded successfully',
-//       success: true,
-//       data: user
-//      });
-
-//   }catch(error){
-//     res.send({
-//       message: error.message,
-//       success: false
-//     });
-//   }
-// });
 router.post('/upload-profile-pic', authMiddleware, async (req, res) => {
   try {
     const { image } = req.body;

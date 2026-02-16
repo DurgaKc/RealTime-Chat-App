@@ -10,6 +10,7 @@ const server = require('./app')
 const port = process.env.PORT_NUMBER || 3000;
 
 app.use(express.json({ limit: "50mb" })); 
+
 app.use(express.urlencoded({ extended: true }));
 
 server.listen(port, ()=>{

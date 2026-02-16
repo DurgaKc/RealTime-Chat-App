@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Avatar } from "@mui/material";
 import { FaMessage } from "react-icons/fa6";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoMdSettings } from "react-icons/io";
 import SettingsDropdown from "./setting/setting";
 
@@ -52,10 +52,10 @@ const ChatHeader = () => {
   return (
     <header className="flex justify-between items-center px-4 py-4 bg-[#EFE9E3] shadow-md">
       {/* Left */}
-      <div className="hidden md:flex items-center gap-2">
+       <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
         <FaMessage className="mt-1 text-[#957C62]" />
         <span className="text-xl font-bold text-[#957C62]">QuickChat</span>
-      </div>
+      </Link>
 
       {/* Right */}
       {/* Right */}
