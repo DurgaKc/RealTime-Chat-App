@@ -38,7 +38,7 @@ const dispatch = useDispatch();
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       toast.success("Logged in Successfully");
-      navigate("/");
+      navigate("/home");
     },
     onError: (err) => {
             dispatch(hideLoader());

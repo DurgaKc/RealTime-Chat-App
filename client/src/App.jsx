@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import "./App.css";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -11,22 +11,25 @@ import Profile from "./pages/profile/index.jsx";
 import PasswordChange from "./pages/Home/components/setting/PasswordChange.jsx";
 
 function App() {
-  const {loader} = useSelector((state) => state.loaderReducer);
-
+  const { loader } = useSelector((state) => state.loaderReducer);
+  
   return (
     <>
       <Toaster reverseOrder={false} />
-     {loader && <Loader />  }
+      {loader && <Loader />}
       <BrowserRouter>
         <Routes>
+          {/* Redirect root to login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          
           <Route
-            path="/"
+            path="/home"
             element={
               <ProtectedRoute>
                 <Home />
               </ProtectedRoute>
             }
-          ></Route>
+          />
           <Route
             path="/profile"
             element={
@@ -34,7 +37,7 @@ function App() {
                 <Profile />
               </ProtectedRoute>
             }
-          ></Route>
+          />
           <Route
             path="/changePassword"
             element={
@@ -42,7 +45,7 @@ function App() {
                 <PasswordChange />
               </ProtectedRoute>
             }
-          ></Route>
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>
