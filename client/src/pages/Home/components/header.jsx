@@ -52,7 +52,7 @@ const ChatHeader = () => {
   return (
     <header className="flex justify-between items-center px-4 py-4 bg-[#EFE9E3] shadow-md">
       {/* Left */}
-       <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+       <Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
         <FaMessage className="mt-1 text-[#957C62]" />
         <span className="text-xl font-bold text-[#957C62]">QuickChat</span>
       </Link>
